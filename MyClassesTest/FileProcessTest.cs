@@ -3,6 +3,7 @@ using MyClasses;
 using System;
 using System.Configuration;
 using System.IO;
+using Xunit.Sdk;
 
 namespace MyClassesTest
 {
@@ -14,19 +15,49 @@ namespace MyClassesTest
 
         public TestContext TestContext { get; set; }
 
+        #region Test Initialize e Cleanup
+
+        [TestInitialize]
+        public void TestInitialize()
+        {
+            if (TestContext.TestName == "FileNameDoesExists")
+            {
+                SetGoodFileName();
+                if (!string.IsNullOrEmpty(_GoodFileName))
+                {
+                    TestContext.WriteLine($"Creating File: {_GoodFileName}");
+                    File.AppendAllText(_GoodFileName, "Some Text");
+                }
+            }
+        }
+
+        [TestCleanup]
+        public void TestCleanup()
+        {
+            if (TestContext.TestName == "FileNameDoesExists")
+            {
+                if (!string.IsNullOrEmpty(_GoodFileName))
+                {
+                    TestContext.WriteLine($"Deleting File: {_GoodFileName}");
+                    File.Delete(_GoodFileName);
+                }
+            }
+        }
+
+        #endregion
+
         [TestMethod]
+        [Description("Check to see if a file does exist.")]
+        [Priority(0)]
+        [TestCategory("NoException")]
         public void FileNameDoesExists()
         {
             FileProcess fp = new FileProcess();
             bool fromCall;
 
-            SetGoodFileName();
-            TestContext.WriteLine($"Creating File: {_GoodFileName}");
-            File.AppendAllText(_GoodFileName, "Some Text");
             TestContext.WriteLine($"Testing File: {_GoodFileName}");
             fromCall = fp.FileExists(_GoodFileName);
-            File.Delete(_GoodFileName);
-            TestContext.WriteLine($"Deleting File: {_GoodFileName}");
+
             Assert.IsTrue(fromCall);
         }
 
@@ -40,7 +71,37 @@ namespace MyClassesTest
             }
         }
 
+
+        private const string FILE_NAME = @"FileToDeploy.txt";
+
+
         [TestMethod]
+        [DeploymentItem(FILE_NAME)]
+        public void FileNameDoesExistsUsingDeploymentItem()
+        {
+            FileProcess fp = new FileProcess();
+            string fileName;
+            bool fromCall;
+
+            fileName = $@"{TestContext.DeploymentDirectory}\{FILE_NAME}";
+            TestContext.WriteLine($"Checking File: {fileName}");
+
+            fromCall = fp.FileExists(fileName);
+
+            Assert.IsTrue(fromCall);
+        }
+
+        [TestMethod]
+        [Timeout(3100)]
+        public void SimulateTimeOut()
+        {
+            System.Threading.Thread.Sleep(3000);
+        }
+
+        [TestMethod]
+        [Description("Check to see if a file does not exist.")]
+        [Priority(0)]
+        [TestCategory("NoException")]
         public void FileNameDoesNotExists()
         {
             FileProcess fp = new FileProcess();
@@ -52,6 +113,8 @@ namespace MyClassesTest
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
+        [TestCategory("Exception")]
+        [Priority(1)]
         public void FileNameNullOrEmpty_ThrowsArgumentNullException()
         {
             FileProcess fp = new FileProcess();
@@ -60,6 +123,8 @@ namespace MyClassesTest
         }
 
         [TestMethod]
+        [Priority(1)]
+        [TestCategory("Exception")]
         public void FileNameNullOrEmpty_ThrowsArgumentNullException_UsingTryCatch()
         {
             FileProcess fp = new FileProcess();
