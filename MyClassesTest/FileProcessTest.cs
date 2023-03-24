@@ -20,7 +20,7 @@ namespace MyClassesTest
         [TestInitialize]
         public void TestInitialize()
         {
-            if (TestContext.TestName == "FileNameDoesExists")
+            if (TestContext.TestName.StartsWith("FileNameDoesExists"))
             {
                 SetGoodFileName();
                 if (!string.IsNullOrEmpty(_GoodFileName))
@@ -34,7 +34,7 @@ namespace MyClassesTest
         [TestCleanup]
         public void TestCleanup()
         {
-            if (TestContext.TestName == "FileNameDoesExists")
+            if (TestContext.TestName.StartsWith("FileNameDoesExists"))
             {
                 if (!string.IsNullOrEmpty(_GoodFileName))
                 {
@@ -59,6 +59,36 @@ namespace MyClassesTest
             fromCall = fp.FileExists(_GoodFileName);
 
             Assert.IsTrue(fromCall);
+        }
+
+
+        [TestMethod]
+        [DataSource("System.Data.SqlClient",
+            @"Server=localhost;Database=TesteUnitario;Trusted_Connection=True;",
+            "FileProcessTest",
+            DataAccessMethod.Sequential)]
+        public void FileExistsTestFromDB()
+        {
+            FileProcess fp = new FileProcess();
+            string fileName;
+            bool expectedValue;
+            bool causesException;
+            bool fromCall;
+
+            fileName = TestContext.DataRow["FileName"].ToString();
+            expectedValue = Convert.ToBoolean(TestContext.DataRow["ExpectedValue"]);
+            causesException = Convert.ToBoolean(TestContext.DataRow["CausesException"]);
+
+            try
+            {
+                fromCall = fp.FileExists(fileName);
+                Assert.AreEqual(expectedValue, fromCall,
+                    $"File: {fileName} has failed. METHOD: FileExistsTestFromDB");
+            }
+            catch (ArgumentException)
+            {
+                Assert.IsTrue(causesException);
+            }
         }
 
         public void SetGoodFileName()

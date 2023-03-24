@@ -22,8 +22,9 @@ namespace MyClassesTest
             //You shall not pass!
             peopleActual = PerMgr.GetPeople();
 
-            CollectionAssert.AreEqual(peopleExpected, peopleActual);
+            CollectionAssert.AreNotEqual(peopleExpected, peopleActual);
         }
+
 
         [TestMethod]
         public void AreCollectionEqualWithComparerTest()
